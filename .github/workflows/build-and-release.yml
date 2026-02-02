@@ -1,0 +1,96 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: 'Repository to build (owner/repo)'
+        required: true
+        type: string
+      branch:
+        description: 'Branch to checkout'
+        required: true
+        default: 'main'
+        type: string
+      build_command:
+        description: 'Gradle build command (e.g., ./gradlew build)'
+        required: true
+        default: './gradlew build'
+        type: string
+      artifact_path:
+        description: 'Path to the file to upload (e.g., build/distributions/app.zip)'
+        required: true
+        type: string
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Run build command
+        run: ${{ inputs.build_command }}
+
+      - name: Verify artifact exists
+        id: verify_artifact
+        run: |
+          ARTIFACT_PATH="${{ inputs.artifact_path }}"
+
+          if [ ! -f "$ARTIFACT_PATH" ]; then
+            echo "Error: Artifact not found at path: $ARTIFACT_PATH"
+            exit 1
+          fi
+
+          echo "artifact_name=$(basename $ARTIFACT_PATH)" >> $GITHUB_OUTPUT
+          echo "Found artifact: $ARTIFACT_PATH"
+
+      - name: Generate release tag
+        id: generate_tag
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          TAG="release-${TIMESTAMP}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Generated tag: $TAG"
+
+      - name: Create Draft Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.generate_tag.outputs.tag }}
+          release_name: Build from ${{ inputs.branch }} - ${{ steps.generate_tag.outputs.tag }}
+          body: |
+            Automated build from repository: ${{ inputs.repository }}
+            Branch: ${{ inputs.branch }}
+            Build command: ${{ inputs.build_command }}
+
+            Built on: ${{ github.run_id }}
+          draft: true
+          prerelease: false
+
+      - name: Upload artifact to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ inputs.artifact_path }}
+          asset_name: ${{ steps.verify_artifact.outputs.artifact_name }}
+          asset_content_type: application/zip
