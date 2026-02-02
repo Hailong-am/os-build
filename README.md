@@ -155,7 +155,10 @@ artifact_pattern: plugin/build/distributions/my-plugin-*.zip
 
 - The target repository must contain a Gradle project with `gradlew` wrapper
 - The specified artifact path must exist after the build completes
-- GitHub token with appropriate permissions (automatically provided)
+- GitHub Actions must have write permissions for contents (releases)
+  - Go to **Settings** → **Actions** → **General** → **Workflow permissions**
+  - Select "Read and write permissions"
+  - Save the changes
 
 ## Notes
 
@@ -174,9 +177,16 @@ artifact_pattern: plugin/build/distributions/my-plugin-*.zip
 - Ensure the path includes the correct file extension
 - Wildcards are supported (e.g., `*.zip`) - the first matching file will be uploaded
 
+### "Resource not accessible by integration" error
+- This means GitHub Actions doesn't have permission to create releases
+- Go to your repository **Settings** → **Actions** → **General**
+- Under "Workflow permissions", select **"Read and write permissions"**
+- Click **Save**
+- Re-run the workflow
+
 ### Permission errors
 - Ensure the repository has Actions enabled
-- Check that the GitHub token has necessary permissions
+- Check that workflow permissions are set to "Read and write"
 
 ### Build failures
 - Verify the build command is correct for the target repository
