@@ -3,9 +3,20 @@ name: Build and Release
 on:
   workflow_dispatch:
     inputs:
-      repository:
-        description: 'Repository to build (owner/repo)'
+      preset:
+        description: 'Preset configuration'
         required: true
+        default: 'custom'
+        type: choice
+        options:
+          - custom
+          - opensearch-arrow-flight-rpc
+          - opensearch-core
+          - opensearch-linux-tar
+          - opensearch-plugin-template
+      repository:
+        description: 'Repository to build (owner/repo) - only used if preset is "custom"'
+        required: false
         type: string
       branch:
         description: 'Branch to checkout'
@@ -13,13 +24,12 @@ on:
         default: 'main'
         type: string
       build_command:
-        description: 'Gradle build command (e.g., ./gradlew build)'
-        required: true
-        default: './gradlew build'
+        description: 'Gradle build command - only used if preset is "custom"'
+        required: false
         type: string
       artifact_path:
-        description: 'Path to the file to upload (e.g., build/distributions/app.zip)'
-        required: true
+        description: 'Path to the file to upload - only used if preset is "custom"'
+        required: false
         type: string
 
 jobs:
@@ -27,12 +37,53 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout workflow repository
+        uses: actions/checkout@v4
+
+      - name: Load preset configuration
+        id: config
+        run: |
+          PRESET="${{ inputs.preset }}"
+
+          if [ "$PRESET" = "custom" ]; then
+            # Custom preset - use manual inputs
+            echo "repository=${{ inputs.repository }}" >> $GITHUB_OUTPUT
+            echo "build_command=${{ inputs.build_command }}" >> $GITHUB_OUTPUT
+            echo "artifact_pattern=${{ inputs.artifact_path }}" >> $GITHUB_OUTPUT
+            echo "preset_name=Custom" >> $GITHUB_OUTPUT
+          else
+            # Load from preset file
+            PRESET_FILE="presets/${PRESET}.yml"
+
+            if [ ! -f "$PRESET_FILE" ]; then
+              echo "Error: Preset file not found: $PRESET_FILE"
+              exit 1
+            fi
+
+            # Parse YAML file (simple key: value format)
+            PRESET_NAME=$(grep '^name:' "$PRESET_FILE" | sed 's/^name: *//')
+            REPOSITORY=$(grep '^repository:' "$PRESET_FILE" | sed 's/^repository: *//')
+            BUILD_COMMAND=$(grep '^build_command:' "$PRESET_FILE" | sed 's/^build_command: *//')
+            ARTIFACT_PATTERN=$(grep '^artifact_pattern:' "$PRESET_FILE" | sed 's/^artifact_pattern: *//')
+
+            echo "repository=$REPOSITORY" >> $GITHUB_OUTPUT
+            echo "build_command=$BUILD_COMMAND" >> $GITHUB_OUTPUT
+            echo "artifact_pattern=$ARTIFACT_PATTERN" >> $GITHUB_OUTPUT
+            echo "preset_name=$PRESET_NAME" >> $GITHUB_OUTPUT
+
+            echo "Loaded preset: $PRESET_NAME"
+            echo "  Repository: $REPOSITORY"
+            echo "  Build command: $BUILD_COMMAND"
+            echo "  Artifact pattern: $ARTIFACT_PATTERN"
+          fi
+
+      - name: Checkout target repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ inputs.repository }}
+          repository: ${{ steps.config.outputs.repository }}
           ref: ${{ inputs.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
+          path: target-repo
 
       - name: Set up JDK
         uses: actions/setup-java@v4
@@ -42,23 +93,28 @@ jobs:
           cache: 'gradle'
 
       - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+        run: chmod +x target-repo/gradlew
 
       - name: Run build command
-        run: ${{ inputs.build_command }}
+        working-directory: target-repo
+        run: ${{ steps.config.outputs.build_command }}
 
-      - name: Verify artifact exists
+      - name: Find and verify artifact
         id: verify_artifact
         run: |
-          ARTIFACT_PATH="${{ inputs.artifact_path }}"
+          ARTIFACT_PATTERN="target-repo/${{ steps.config.outputs.artifact_pattern }}"
 
-          if [ ! -f "$ARTIFACT_PATH" ]; then
-            echo "Error: Artifact not found at path: $ARTIFACT_PATH"
+          # Find files matching the pattern
+          ARTIFACT_FILES=$(ls $ARTIFACT_PATTERN 2>/dev/null | head -n 1)
+
+          if [ -z "$ARTIFACT_FILES" ]; then
+            echo "Error: No artifact found matching pattern: $ARTIFACT_PATTERN"
             exit 1
           fi
 
-          echo "artifact_name=$(basename $ARTIFACT_PATH)" >> $GITHUB_OUTPUT
-          echo "Found artifact: $ARTIFACT_PATH"
+          echo "artifact_path=$ARTIFACT_FILES" >> $GITHUB_OUTPUT
+          echo "artifact_name=$(basename $ARTIFACT_FILES)" >> $GITHUB_OUTPUT
+          echo "Found artifact: $ARTIFACT_FILES"
 
       - name: Generate release tag
         id: generate_tag
@@ -75,11 +131,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.generate_tag.outputs.tag }}
-          release_name: Build from ${{ inputs.branch }} - ${{ steps.generate_tag.outputs.tag }}
+          release_name: ${{ steps.config.outputs.preset_name }} - ${{ steps.generate_tag.outputs.tag }}
           body: |
-            Automated build from repository: ${{ inputs.repository }}
+            **${{ steps.config.outputs.preset_name }}**
+
+            Repository: ${{ steps.config.outputs.repository }}
             Branch: ${{ inputs.branch }}
-            Build command: ${{ inputs.build_command }}
+            Build command: ${{ steps.config.outputs.build_command }}
 
             Built on: ${{ github.run_id }}
           draft: true
@@ -91,6 +149,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ inputs.artifact_path }}
+          asset_path: ${{ steps.verify_artifact.outputs.artifact_path }}
           asset_name: ${{ steps.verify_artifact.outputs.artifact_name }}
           asset_content_type: application/zip

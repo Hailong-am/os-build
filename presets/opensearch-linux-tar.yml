@@ -1,0 +1,4 @@
+name: OpenSearch Linux Distribution
+repository: opensearch-project/OpenSearch
+build_command: ./gradlew :distribution:archives:linux-tar:assemble
+artifact_pattern: distribution/archives/linux-tar/build/distributions/opensearch-*.tar.gz

@@ -1,0 +1,4 @@
+name: OpenSearch Core Library
+repository: opensearch-project/OpenSearch
+build_command: ./gradlew :libs:opensearch-core:assemble
+artifact_pattern: libs/opensearch-core/build/distributions/opensearch-core-*.jar

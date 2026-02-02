@@ -1,0 +1,4 @@
+name: OpenSearch Plugin Template
+repository: opensearch-project/opensearch-plugin-template
+build_command: ./gradlew build
+artifact_pattern: build/distributions/*.zip
