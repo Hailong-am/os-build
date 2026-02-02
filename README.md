@@ -40,7 +40,7 @@ The workflow accepts the following inputs:
 | `preset` | Preset configuration to use | Yes | `custom` | `opensearch-arrow-flight-rpc` |
 | `repository` | Repository to build (owner/repo format) - only for custom preset | No | - | `opensearch-project/OpenSearch` |
 | `branch` | Branch to checkout | Yes | `main` | `main` or `2.x` |
-| `build_command` | Gradle build command - only for custom preset | No | - | `./gradlew assemble` |
+| `build_command` | Gradle build command - only for custom preset | No | `./gradlew assemble` | `./gradlew build` |
 | `artifact_path` | Path/pattern to the file to upload - only for custom preset | No | - | `build/distributions/*.zip` |
 
 ## How to Use

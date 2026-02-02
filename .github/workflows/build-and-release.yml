@@ -29,6 +29,7 @@ on:
       build_command:
         description: 'Gradle build command - only used if preset is "custom"'
         required: false
+        default: './gradlew assemble'
         type: string
       artifact_path:
         description: 'Path to the file to upload - only used if preset is "custom"'
