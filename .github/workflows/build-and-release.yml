@@ -14,6 +14,7 @@ on:
           - opensearch-core
           - opensearch-linux-tar
           - opensearch-plugin-template
+          - opensearch-transport-reactor-netty4
       repository:
         description: 'Repository to build (owner/repo) - only used if preset is "custom"'
         required: false

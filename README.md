@@ -26,6 +26,7 @@ Preset configurations are stored in the `presets/` folder as YAML files. Each pr
 | `opensearch-core` | opensearch-project/OpenSearch | `./gradlew :libs:opensearch-core:assemble` | `libs/opensearch-core/build/distributions/opensearch-core-*.jar` |
 | `opensearch-linux-tar` | opensearch-project/OpenSearch | `./gradlew :distribution:archives:linux-tar:assemble` | `distribution/archives/linux-tar/build/distributions/opensearch-*.tar.gz` |
 | `opensearch-plugin-template` | opensearch-project/opensearch-plugin-template | `./gradlew build` | `build/distributions/*.zip` |
+| `opensearch-transport-reactor-netty4` | opensearch-project/OpenSearch | `./gradlew :plugins:transport-reactor-netty4:assemble` | `plugins/transport-reactor-netty4/build/distributions/transport-reactor-netty4-*.zip` |
 | `custom` | User-specified | User-specified | User-specified |
 
 ## Workflow Inputs
