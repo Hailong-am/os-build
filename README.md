@@ -42,6 +42,7 @@ The workflow accepts the following inputs:
 | `branch` | Branch to checkout | Yes | `main` | `main` or `2.x` |
 | `build_command` | Gradle build command - only for custom preset | No | `./gradlew assemble` | `./gradlew build` |
 | `artifact_path` | Path/pattern to the file to upload - only for custom preset | No | - | `build/distributions/*.zip` |
+| `release_tag` | Release tag name (if not provided, auto-generates timestamp tag) | No | - | `v1.0.0` or `3.0.0-rc1` |
 
 ## How to Use
 
@@ -106,16 +107,20 @@ The workflow performs the following steps:
 3. **Setup Java**: Installs JDK 21 with Gradle caching enabled
 4. **Build**: Executes the provided Gradle build command
 5. **Find Artifact**: Locates the artifact file matching the pattern (supports wildcards)
-6. **Create Release**: Creates a draft release with a timestamp tag
-7. **Upload**: Uploads the artifact to the draft release
+6. **Generate Tag**: Uses provided tag or generates timestamp-based tag
+7. **Create Release**: Creates a pre-release (published immediately)
+8. **Upload**: Uploads the artifact to the release
 
 ## Release Naming
 
-Releases are automatically tagged with timestamps in the format:
-- Tag: `release-YYYYMMDD-HHMMSS`
+You can provide a custom release tag (e.g., `v1.0.0`, `3.0.0-rc1`) via the `release_tag` input.
+
+If no tag is provided, a timestamp tag is automatically generated:
+- Format: `release-YYYYMMDD-HHMMSS`
 - Example: `release-20260202-143530`
 
-The release name includes the branch and tag for easy identification.
+The release name includes the preset name and tag for easy identification.
+All releases are created as **pre-releases** and published immediately.
 
 ## Adding New Presets
 
@@ -165,11 +170,12 @@ artifact_pattern: plugin/build/distributions/my-plugin-*.zip
 
 ## Notes
 
-- All releases are created as **drafts** - you need to manually publish them
+- All releases are created as **pre-releases** and published immediately
+- You can provide a custom tag via `release_tag` input, or let it auto-generate a timestamp tag
 - The workflow uses JDK 21 by default
 - Gradle dependencies are cached to speed up subsequent builds
 - Artifact paths support wildcards (e.g., `build/distributions/*.zip`)
-- When using presets, only the branch input needs to be specified
+- When using presets, only the branch input needs to be specified (repository and build command are preset)
 - The artifact content type is set to `application/zip` (works for most archive formats)
 
 ## Troubleshooting

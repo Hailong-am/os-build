@@ -35,6 +35,10 @@ on:
         description: 'Path to the file to upload - only used if preset is "custom"'
         required: false
         type: string
+      release_tag:
+        description: 'Release tag (e.g., v1.0.0). If not provided, auto-generates timestamp tag'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -126,12 +130,17 @@ jobs:
       - name: Generate release tag
         id: generate_tag
         run: |
-          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          TAG="release-${TIMESTAMP}"
+          if [ -n "${{ inputs.release_tag }}" ]; then
+            TAG="${{ inputs.release_tag }}"
+            echo "Using provided tag: $TAG"
+          else
+            TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+            TAG="release-${TIMESTAMP}"
+            echo "Generated timestamp tag: $TAG"
+          fi
           echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Generated tag: $TAG"
 
-      - name: Create Draft Release
+      - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -147,8 +156,8 @@ jobs:
             Build command: ${{ steps.config.outputs.build_command }}
 
             Built on: ${{ github.run_id }}
-          draft: true
-          prerelease: false
+          draft: false
+          prerelease: true
 
       - name: Upload artifact to Release
         uses: actions/upload-release-asset@v1
