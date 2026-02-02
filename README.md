@@ -28,6 +28,7 @@ Preset configurations are stored in the `presets/` folder as YAML files. Each pr
 | `opensearch-plugin-template` | opensearch-project/opensearch-plugin-template | `./gradlew build` | `build/distributions/*.zip` |
 | `opensearch-transport-reactor-netty4` | opensearch-project/OpenSearch | `./gradlew :plugins:transport-reactor-netty4:assemble` | `plugins/transport-reactor-netty4/build/distributions/transport-reactor-netty4-*.zip` |
 | `ml-commons-olly3` | Hailong-am/ml-commons | `./gradlew assemble` | `plugin/build/distributions/*.zip` |
+| `opensearch-skills` | opensearch-project/skills | `./gradlew assemble` | `build/distributions/*.zip` |
 | `custom` | User-specified | User-specified | User-specified |
 
 ## Workflow Inputs
