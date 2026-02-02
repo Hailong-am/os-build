@@ -58,7 +58,7 @@ artifact_path: build/distributions/my-plugin-1.0.0.zip
 The workflow performs the following steps:
 
 1. **Checkout**: Clones the specified repository and branch
-2. **Setup Java**: Installs JDK 17 with Gradle caching enabled
+2. **Setup Java**: Installs JDK 21 with Gradle caching enabled
 3. **Build**: Executes the provided Gradle build command
 4. **Verify**: Checks that the artifact exists at the specified path
 5. **Create Release**: Creates a draft release with a timestamp tag
@@ -81,7 +81,7 @@ The release name includes the branch and tag for easy identification.
 ## Notes
 
 - All releases are created as **drafts** - you need to manually publish them
-- The workflow uses JDK 17 by default
+- The workflow uses JDK 21 by default
 - Gradle dependencies are cached to speed up subsequent builds
 - The artifact content type is set to `application/zip` (works for most archive formats)
 
