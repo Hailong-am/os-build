@@ -42,6 +42,8 @@ on:
 
 permissions:
   contents: write
+  packages: write
+  actions: read
 
 jobs:
   build-and-release:
