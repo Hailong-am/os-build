@@ -17,6 +17,7 @@ on:
           - opensearch-transport-reactor-netty4
           - ml-commons-olly3
           - opensearch-skills
+          - olly3-playground-skills
       repository:
         description: 'Repository to build (owner/repo) - only used if preset is "custom"'
         required: false
