@@ -10,14 +10,14 @@ on:
         type: choice
         options:
           - custom
+          - ml-commons-olly3
+          - olly3-playground-skills
           - opensearch-arrow-flight-rpc
           - opensearch-core
           - opensearch-linux-tar
           - opensearch-plugin-template
-          - opensearch-transport-reactor-netty4
-          - ml-commons-olly3
           - opensearch-skills
-          - olly3-playground-skills
+          - opensearch-transport-reactor-netty4
       repository:
         description: 'Repository to build (owner/repo) - only used if preset is "custom"'
         required: false
@@ -60,8 +60,12 @@ jobs:
           PRESET="${{ inputs.preset }}"
 
           if [ "$PRESET" = "custom" ]; then
-            # Custom preset - use manual inputs
+            # Custom preset - use manual inputs with fallback to main
+            BRANCH="${{ inputs.branch }}"
+            BRANCH="${BRANCH:-main}"
+            
             echo "repository=${{ inputs.repository }}" >> $GITHUB_OUTPUT
+            echo "branch=$BRANCH" >> $GITHUB_OUTPUT
             echo "build_command=${{ inputs.build_command }}" >> $GITHUB_OUTPUT
             echo "artifact_pattern=${{ inputs.artifact_path }}" >> $GITHUB_OUTPUT
             echo "preset_name=Custom" >> $GITHUB_OUTPUT
@@ -77,16 +81,23 @@ jobs:
             # Parse YAML file (simple key: value format)
             PRESET_NAME=$(grep '^name:' "$PRESET_FILE" | sed 's/^name: *//')
             REPOSITORY=$(grep '^repository:' "$PRESET_FILE" | sed 's/^repository: *//')
+            PRESET_BRANCH=$(grep '^branch:' "$PRESET_FILE" | sed 's/^branch: *//')
             BUILD_COMMAND=$(grep '^build_command:' "$PRESET_FILE" | sed 's/^build_command: *//')
             ARTIFACT_PATTERN=$(grep '^artifact_pattern:' "$PRESET_FILE" | sed 's/^artifact_pattern: *//')
 
+            # Priority: preset branch > input branch > default 'main'
+            BRANCH="${PRESET_BRANCH:-${{ inputs.branch }}}"
+            BRANCH="${BRANCH:-main}"
+
             echo "repository=$REPOSITORY" >> $GITHUB_OUTPUT
+            echo "branch=$BRANCH" >> $GITHUB_OUTPUT
             echo "build_command=$BUILD_COMMAND" >> $GITHUB_OUTPUT
             echo "artifact_pattern=$ARTIFACT_PATTERN" >> $GITHUB_OUTPUT
             echo "preset_name=$PRESET_NAME" >> $GITHUB_OUTPUT
 
             echo "Loaded preset: $PRESET_NAME"
             echo "  Repository: $REPOSITORY"
+            echo "  Branch: $BRANCH"
             echo "  Build command: $BUILD_COMMAND"
             echo "  Artifact pattern: $ARTIFACT_PATTERN"
           fi
@@ -95,7 +106,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.config.outputs.repository }}
-          ref: ${{ inputs.branch }}
+          ref: ${{ steps.config.outputs.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
           path: target-repo
 
@@ -154,7 +165,7 @@ jobs:
             **${{ steps.config.outputs.preset_name }}**
 
             Repository: ${{ steps.config.outputs.repository }}
-            Branch: ${{ inputs.branch }}
+            Branch: ${{ steps.config.outputs.branch }}
             Build command: ${{ steps.config.outputs.build_command }}
 
             Built on: ${{ github.run_id }}

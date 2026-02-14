@@ -132,29 +132,27 @@ To add a new preset configuration:
 ```yaml
 name: My New Preset Name
 repository: owner/repository-name
+branch: main  # Optional - defaults to workflow input or 'main'
 build_command: ./gradlew <your-gradle-command>
 artifact_pattern: path/to/artifact-*.zip
 ```
 
-3. Update the workflow file `.github/workflows/build-and-release.yml` to add your preset to the options list:
+3. Run the sync script to update the workflow:
 
-```yaml
-options:
-  - custom
-  - opensearch-arrow-flight-rpc
-  - opensearch-core
-  - opensearch-linux-tar
-  - opensearch-plugin-template
-  - my-new-preset  # Add your preset here
+```bash
+./sync-presets.sh
 ```
 
 4. Commit and push the changes
+
+The sync script automatically reads all preset files and updates the workflow dropdown options.
 
 **Example preset file (`presets/my-plugin.yml`):**
 
 ```yaml
 name: My Custom Plugin
 repository: myorg/my-opensearch-plugin
+branch: develop
 build_command: ./gradlew :plugin:assemble
 artifact_pattern: plugin/build/distributions/my-plugin-*.zip
 ```
