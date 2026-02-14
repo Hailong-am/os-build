@@ -1,5 +1,5 @@
 name: OpenSearch Skills
 repository: Hailong-am/skills
 build_command: ./gradlew assemble
-branch: olly3-playground
+branch: olly3_playground
 artifact_pattern: build/distributions/*.zip
