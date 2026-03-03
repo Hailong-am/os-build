@@ -1,4 +1,0 @@
-name: OpenSearch Skills
-repository: opensearch-project/skills
-build_command: ./gradlew assemble
-artifact_pattern: build/distributions/*.zip

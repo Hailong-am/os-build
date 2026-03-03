@@ -1,4 +1,6 @@
 name: OpenSearch Arrow Flight RPC Plugin
 repository: opensearch-project/OpenSearch
+branch: 3.5
+label: arrow-flight-rpc-3.5
 build_command: ./gradlew :plugins:arrow-flight-rpc:assemble
 artifact_pattern: plugins/arrow-flight-rpc/build/distributions/arrow-flight-rpc-*.zip

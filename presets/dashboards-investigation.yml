@@ -1,0 +1,6 @@
+name: OpenSearch Dashboards Investigation Plugin
+repository: opensearch-project/dashboards-investigation
+branch: olly3-playground
+label: dashboards-investigation-olly3-playground
+build_command: yarn build
+artifact_pattern: build/*.zip

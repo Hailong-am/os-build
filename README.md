@@ -37,9 +37,9 @@ The workflow accepts the following inputs:
 
 | Input | Description | Required | Default | Example |
 |-------|-------------|----------|---------|---------|
-| `preset` | Preset configuration to use | Yes | `custom` | `opensearch-arrow-flight-rpc` |
+| `preset` | Preset configuration to use | No | `custom` | `opensearch-arrow-flight-rpc` |
 | `repository` | Repository to build (owner/repo format) - only for custom preset | No | - | `opensearch-project/OpenSearch` |
-| `branch` | Branch to checkout | Yes | `main` | `main` or `2.x` |
+| `branch` | Branch to checkout | No | `main` | `main` or `2.x` |
 | `build_command` | Gradle build command - only for custom preset | No | `./gradlew assemble` | `./gradlew build` |
 | `artifact_path` | Path/pattern to the file to upload - only for custom preset | No | - | `build/distributions/*.zip` |
 | `release_tag` | Release tag name (if not provided, auto-generates timestamp tag) | No | - | `v1.0.0` or `3.0.0-rc1` |
@@ -60,11 +60,11 @@ The workflow accepts the following inputs:
 1. **Navigate to Actions tab** in your GitHub repository
 2. **Select "Build and Release"** workflow from the left sidebar
 3. **Click "Run workflow"** button
-4. **Select "custom"** from the preset dropdown
-5. **Fill in the required inputs**:
+4. **Select "custom"** from the preset dropdown (or leave as default)
+5. **Fill in the inputs**:
    - Repository: Enter the repository in `owner/name` format
-   - Branch: Enter the branch name you want to build
-   - Build command: Enter the Gradle command to run
+   - Branch: Enter the branch name you want to build (optional, defaults to `main`)
+   - Build command: Enter the Gradle command to run (optional, defaults to `./gradlew assemble`)
    - Artifact path: Enter the path/pattern to the file you want to upload
 6. **Click "Run workflow"** to start
 

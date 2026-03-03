@@ -1,4 +1,6 @@
 name: OpenSearch Transport Reactor Netty4 Plugin
 repository: opensearch-project/OpenSearch
+branch: 3.5
+label: transport-reactor-netty4-3.5
 build_command: ./gradlew :plugins:transport-reactor-netty4:assemble
 artifact_pattern: plugins/transport-reactor-netty4/build/distributions/transport-reactor-netty4-*.zip

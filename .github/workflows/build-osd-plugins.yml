@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build and Release OSD Plugins
 
 on:
   workflow_dispatch:
@@ -10,25 +10,20 @@ on:
         type: choice
         options:
           - custom
-          - ml-commons-olly3
-          - olly3-playground-skills
-          - opensearch-arrow-flight-rpc
-          - opensearch-core
-          - opensearch-linux-tar
-          - opensearch-plugin-template
-          - opensearch-skills
-          - opensearch-transport-reactor-netty4
+          - dashboards-investigation
       repository:
         description: 'Repository to build (owner/repo) - only used if preset is "custom"'
         required: false
         type: string
       branch:
         description: 'Branch to checkout'
-        required: false
+        required: true
+        default: 'main'
         type: string
       build_command:
-        description: 'Gradle build command - only used if preset is "custom"'
+        description: 'Build command - only used if preset is "custom"'
         required: false
+        default: 'yarn build'
         type: string
       artifact_path:
         description: 'Path to the file to upload - only used if preset is "custom"'
@@ -62,11 +57,15 @@ jobs:
             BRANCH="${{ inputs.branch }}"
             BRANCH="${BRANCH:-main}"
 
+            # Extract plugin name from repository (everything after last /)
+            PLUGIN_NAME=$(echo "${{ inputs.repository }}" | sed 's/.*\///')
+
             echo "repository=${{ inputs.repository }}" >> $GITHUB_OUTPUT
             echo "branch=$BRANCH" >> $GITHUB_OUTPUT
             echo "build_command=${{ inputs.build_command }}" >> $GITHUB_OUTPUT
             echo "artifact_pattern=${{ inputs.artifact_path }}" >> $GITHUB_OUTPUT
             echo "preset_name=Custom" >> $GITHUB_OUTPUT
+            echo "plugin_name=$PLUGIN_NAME" >> $GITHUB_OUTPUT
           else
             # Load from preset file
             PRESET_FILE="presets/${PRESET}.yml"
@@ -82,50 +81,78 @@ jobs:
             PRESET_BRANCH=$(grep '^branch:' "$PRESET_FILE" | sed 's/^branch: *//')
             BUILD_COMMAND=$(grep '^build_command:' "$PRESET_FILE" | sed 's/^build_command: *//')
             ARTIFACT_PATTERN=$(grep '^artifact_pattern:' "$PRESET_FILE" | sed 's/^artifact_pattern: *//')
+            PLUGIN_NAME=$(grep '^plugin_name:' "$PRESET_FILE" | sed 's/^plugin_name: *//')
 
             # Priority: preset branch > input branch > default 'main'
             BRANCH="${PRESET_BRANCH:-${{ inputs.branch }}}"
             BRANCH="${BRANCH:-main}"
+
+            # If plugin_name not specified, extract from repository name
+            if [ -z "$PLUGIN_NAME" ]; then
+              PLUGIN_NAME=$(echo "$REPOSITORY" | sed 's/.*\///')
+            fi
 
             echo "repository=$REPOSITORY" >> $GITHUB_OUTPUT
             echo "branch=$BRANCH" >> $GITHUB_OUTPUT
             echo "build_command=$BUILD_COMMAND" >> $GITHUB_OUTPUT
             echo "artifact_pattern=$ARTIFACT_PATTERN" >> $GITHUB_OUTPUT
             echo "preset_name=$PRESET_NAME" >> $GITHUB_OUTPUT
+            echo "plugin_name=$PLUGIN_NAME" >> $GITHUB_OUTPUT
 
             echo "Loaded preset: $PRESET_NAME"
             echo "  Repository: $REPOSITORY"
             echo "  Branch: $BRANCH"
             echo "  Build command: $BUILD_COMMAND"
             echo "  Artifact pattern: $ARTIFACT_PATTERN"
+            echo "  Plugin name: $PLUGIN_NAME"
           fi
 
-      - name: Checkout target repository
+      - name: Checkout OpenSearch Dashboards
+        uses: actions/checkout@v4
+        with:
+          repository: opensearch-project/OpenSearch-Dashboards
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: OpenSearch-Dashboards
+
+      - name: Checkout plugin repository
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.config.outputs.repository }}
           ref: ${{ steps.config.outputs.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          path: target-repo
+          path: OpenSearch-Dashboards/plugins/${{ steps.config.outputs.plugin_name }}
 
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'gradle'
+      - name: Set up Node.js with nvm
+        working-directory: OpenSearch-Dashboards
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm install
+          nvm use
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x target-repo/gradlew
+      - name: Bootstrap OpenSearch Dashboards
+        working-directory: OpenSearch-Dashboards
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use
+          yarn osd bootstrap
 
       - name: Run build command
-        working-directory: target-repo
-        run: ${{ steps.config.outputs.build_command }}
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          cd OpenSearch-Dashboards
+          nvm use
+          cd plugins/${{ steps.config.outputs.plugin_name }}
+          ${{ steps.config.outputs.build_command }}
 
       - name: Find and verify artifact
         id: verify_artifact
         run: |
-          ARTIFACT_PATTERN="target-repo/${{ steps.config.outputs.artifact_pattern }}"
+          ARTIFACT_PATTERN="OpenSearch-Dashboards/plugins/${{ steps.config.outputs.plugin_name }}/${{ steps.config.outputs.artifact_pattern }}"
 
           # Find files matching the pattern
           ARTIFACT_FILES=$(ls $ARTIFACT_PATTERN 2>/dev/null | head -n 1)

@@ -1,4 +1,6 @@
 name: ML Commons (olly3-playground)
 repository: Hailong-am/ml-commons
+branch: olly3-playground
+label: ml-commons-olly3-playground
 build_command: ./gradlew assemble
 artifact_pattern: plugin/build/distributions/*.zip
