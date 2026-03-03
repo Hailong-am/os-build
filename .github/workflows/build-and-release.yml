@@ -76,6 +76,7 @@ jobs:
             PRESET_NAME=$(grep '^name:' "$PRESET_FILE" | sed 's/^name: *//')
             REPOSITORY=$(grep '^repository:' "$PRESET_FILE" | sed 's/^repository: *//')
             PRESET_BRANCH=$(grep '^branch:' "$PRESET_FILE" | sed 's/^branch: *//')
+            LABEL=$(grep '^label:' "$PRESET_FILE" | sed 's/^label: *//')
             BUILD_COMMAND=$(grep '^build_command:' "$PRESET_FILE" | sed 's/^build_command: *//')
             ARTIFACT_PATTERN=$(grep '^artifact_pattern:' "$PRESET_FILE" | sed 's/^artifact_pattern: *//')
 
@@ -88,10 +89,12 @@ jobs:
             echo "build_command=$BUILD_COMMAND" >> $GITHUB_OUTPUT
             echo "artifact_pattern=$ARTIFACT_PATTERN" >> $GITHUB_OUTPUT
             echo "preset_name=$PRESET_NAME" >> $GITHUB_OUTPUT
+            echo "label=$LABEL" >> $GITHUB_OUTPUT
 
             echo "Loaded preset: $PRESET_NAME"
             echo "  Repository: $REPOSITORY"
             echo "  Branch: $BRANCH"
+            echo "  Label: $LABEL"
             echo "  Build command: $BUILD_COMMAND"
             echo "  Artifact pattern: $ARTIFACT_PATTERN"
           fi
@@ -141,6 +144,9 @@ jobs:
           if [ -n "${{ inputs.release_tag }}" ]; then
             TAG="${{ inputs.release_tag }}"
             echo "Using provided tag: $TAG"
+          elif [ -n "${{ steps.config.outputs.label }}" ]; then
+            TAG="${{ steps.config.outputs.label }}"
+            echo "Using label from preset: $TAG"
           else
             TIMESTAMP=$(date +%Y%m%d-%H%M%S)
             TAG="release-${TIMESTAMP}"
